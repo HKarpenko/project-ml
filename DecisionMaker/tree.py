@@ -11,17 +11,20 @@ feature = ['valence','year','acousticness','danceability','duration_ms','energy'
 data_path = "../data/data_by_decade/data_from_"
 
 def create_tree(decade = "00s"):
-    myTree = tree.DecisionTreeClassifier(criterion="entropy", max_depth=6) # the best crit & depth
+    print("DECADE: "+decade+"\n")
+    for dp in range(1,15):
+        myTree = tree.DecisionTreeClassifier(criterion="gini", max_depth=dp) # the best crit & depth
 
-    df = pd.read_csv(str(data_path + decade + ".csv"))
+        df = pd.read_csv(str(data_path + decade + ".csv"))
 
-    X_train, X_test, y_train, y_test = train_test_split(df[feature], df[target], test_size=0.3, random_state=1)
+        X_train, X_test, y_train, y_test = train_test_split(df[feature], df[target], test_size=0.3, random_state=1)
 
-    myTree.fit(X_train, y_train)
+        myTree.fit(X_train, y_train)
 
-    ans = myTree.predict(X_test)
+        ans = myTree.predict(X_test)
 
-    print("Accuracy:", metrics.accuracy_score(y_test, ans))
+        print("depth:",dp," Accuracy:", metrics.accuracy_score(y_test, ans))
 
-
-create_tree()
+create_tree("00s")
+for i in range(10,100,10):
+    create_tree(str(i)+"s")
