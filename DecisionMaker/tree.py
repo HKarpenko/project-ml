@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier
+import seaborn as sns
 from scipy.stats import pearsonr
 
 import pandas as pd
@@ -14,15 +15,27 @@ feature_2 = ['valence','acousticness','danceability','duration_ms','energy','ins
 data_path = "../data/data_by_decade/data_from_10s.csv"
 data_path_all = "../data/data.csv"
 data_path_2 = "../data/data_2.csv"
+data_path_3 = "../data/data2_preprocessed.csv"
 
-def check_answers(answer, actual):
+def check_answers(answer, actual, X_test):
     answer = list(answer)
     actual = list(actual)
     ok = 0
     diff = 15
+    ans_list = []
     for i in range(len(answer)):
         if(actual[i] < answer[i]+diff and actual[i] > answer[i]-diff ):
             ok+=1
+            ans_list.append(1)
+        else:
+            ans_list.append(0)
+    print(len(X_test['valence']))
+    print(len(ans_list))
+    X_test['answers'] = ans_list
+    print(X_test.head(100))
+    X_test.plot.scatter(x=feature[0],
+                        y=feature[1],
+                        c=X_test['answers'])
     return ok/len(answer)
 
 def create_tree(features):
@@ -36,7 +49,7 @@ def create_tree(features):
         myTree.fit(X_train, y_train)
 
         ans = myTree.predict(X_test)
-        print("Depth:",dp," Accuracy: ", check_answers(ans, y_test))
+        print("Depth:",dp," Accuracy: ", check_answers(ans, y_test, X_test))
 
 def create_boost(features, data_path):
     abc = AdaBoostClassifier(n_estimators=50, learning_rate=1)
@@ -48,29 +61,26 @@ def create_boost(features, data_path):
     abc.fit(X_train, y_train)
 
     ans = abc.predict(X_test)
-    print("Accuracy: ", check_answers(ans, y_test))
+    print("Accuracy: ", check_answers(ans, y_test, X_test))
 
 def create_forest(features, data_path):
     dp=9
     est=95
 
-    print(1)
-
     df = pd.read_csv(str(data_path))
 
     X_train, X_test, y_train, y_test = train_test_split(df[features], df[target], test_size=0.2, random_state=1)
 
+    print(type(X_test))
     forestClassifier = RandomForestClassifier(n_estimators=est, max_depth=dp, random_state=0, criterion="gini") # the best num, crit & depth (decade 10s)
     forestRegressor = RandomForestRegressor(n_estimators=est, max_depth=dp, random_state=0) # the best num, crit & depth (decade 10s)
-    print(2)
 
     forestClassifier.fit(X_train, y_train)
-    print(3)
     ansClassifier = forestClassifier.predict(X_test)
     forestRegressor.fit(X_train, y_train)
     ansRegressor = forestRegressor.predict(X_test)
     
-    print("Classifier Num:", est, " Depth:", dp, " Accuracy: ", check_answers(ansClassifier, y_test))
+    print("Classifier Num:", est, " Depth:", dp, " Accuracy: ", check_answers(ansClassifier, y_test, X_test))
     
 
     feature_classifier_importances_df = pd.DataFrame(
@@ -80,7 +90,7 @@ def create_forest(features, data_path):
     # Display
     print(feature_classifier_importances_df)
 
-    print("Regressor Num:", est, " Depth:", dp, " Accuracy: ", check_answers(ansRegressor, y_test))
+    print("Regressor Num:", est, " Depth:", dp, " Accuracy: ", check_answers(ansRegressor, y_test, X_test))
     feature_regressor_importances_df = pd.DataFrame(
         {"feature": features, "importance": forestRegressor.feature_importances_}
     ).sort_values("importance", ascending=False)
@@ -99,10 +109,13 @@ def features():
     print(feature_importances_df)
 """
 
-
+"""
 create_forest(feature_2, data_path_2)
 create_forest(feature, data_path_all)
 print("BOOST")
 print("feature_2")
 create_boost(feature_2, data_path_2)
 create_boost(feature, data_path_all)
+"""
+create_forest(feature_2, data_path_3)
+create_forest(feature_2, data_path_all)
